@@ -1,0 +1,19 @@
+{
+  "name": "jianpanxia",
+  "version": "1.0.0",
+  "description": "Convenient keyboard enhancement use AutoHotKey",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "build": "./lib/ahk2exe/Ahk2Exe.exe /in ../../src/main.ahk /out ../dist/jpx.exe"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/imyyliang/jianpanxia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
