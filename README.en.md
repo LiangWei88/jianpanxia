@@ -25,3 +25,15 @@ The native Capslock key is changed to Capslock + '
     - m Ctrl + BackSpace
     - , Ctrl + Delete
     - . Ctrl + Delete (Delete a Word)
+
+## Number keys
+- Shift + Alt + space - 0
+- Shift + Alt + m - 1
+- Shift + Alt + , - 2
+- Shift + Alt + . - 3
+- Shift + Alt + j - 4
+- Shift + Alt + k - 5
+- Shift + Alt + l - 6
+- Shift + Alt + u - 7
+- Shift + Alt + i - 8
+- Shift + Alt + o - 9
