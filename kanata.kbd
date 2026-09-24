@@ -1,0 +1,88 @@
+#|
+Kanata Vim 风格全局导航键盘系统
+---------------------------------
+CapsLock: tap → Esc, hold → Nav Layer
+开发文档: kanata-开发文档.md
+Kanata 版本: 1.12.0
+后端: Windows winIOv2
+启动: kanata_windows_tty_winIOv2_cmd_allowed_x64.exe --cfg kanata.kbd
+检查: kanata_windows_tty_winIOv2_cmd_allowed_x64.exe --check --cfg kanata.kbd
+紧急退出: Left Ctrl + Space + Esc (物理键，在 Kanata 重映射前生效)
+|#
+
+;; ==================== defcfg ====================
+(defcfg
+  ;; 允许处理未在 defsrc 中定义的键
+  process-unmapped-keys yes
+
+  ;; 并发 tap-hold 优化，加快多 tap-hold 决策
+  concurrent-tap-hold yes
+)
+
+;; ==================== defsrc ====================
+;; 标准 US QWERTY 布局，所有物理键都被 Kanata 拦截
+(defsrc
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt           spc            ralt rmet rctl
+)
+
+;; ==================== defvar ====================
+;; 可调参数：CapsLock tap/hold 超时时间（毫秒）
+(defvar
+  tap-timeout   180   ;; tap 判定超时
+  hold-timeout  180   ;; hold 激活超时
+)
+
+;; ==================== defalias ====================
+;; 注意: alias 定义名不带 @ 前缀，引用时才用 @
+(defalias
+  ;; --- CapsLock tap/hold ---
+  ;; tap → Esc, hold → 激活 Nav Layer (layer-toggle)
+  capnav (tap-hold $tap-timeout $hold-timeout esc (layer-toggle nav))
+
+  ;; --- 单词级移动 ---
+  word-right C-rght   ;; Ctrl + Right (下一个单词)
+  word-left  C-left   ;; Ctrl + Left  (上一个单词)
+
+  ;; --- 浏览器/文件管理器前进后退 ---
+  back  A-left        ;; Alt + Left  (后退)
+  fwd   A-rght        ;; Alt + Right (前进)
+
+  ;; --- 文档快速跳转 ---
+  doc-home C-home     ;; Ctrl + Home (文档开头)
+  doc-end  C-end      ;; Ctrl + End  (文档末尾)
+
+  ;; --- G 键条件输出 ---
+  ;; 默认 → Ctrl+Home
+  ;; Shift 按下时 → 先释放 Shift 再 Ctrl+End（避免选中效果）
+  g-home-end (fork @doc-home (multi (release-key lsft) (release-key rsft) @doc-end) (lsft rsft))
+
+  ;; --- 鼠标滚轮（带惯性加速）---
+  ;; 参数: initial-velocity max-velocity acceleration deceleration
+  wheel-up   (mwheel-accel-up   3 1200 1.15 0.93)
+  wheel-down (mwheel-accel-down 3 1200 1.15 0.93)
+)
+
+;; ==================== deflayer base ====================
+;; Base Layer: 除 CapsLock 外，所有键保持原始行为
+(deflayer base
+  _    1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  @capnav a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt           spc            ralt rmet rctl
+)
+
+;; ==================== deflayer nav ====================
+;; Nav Layer: CapsLock 按住时激活
+;; 所有未定义的键透明传递（保持 base layer 行为）
+(deflayer nav
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    @word-right _    _    _    home pgup pgdn end  _    _    _    _
+  _    _    _    _    _    @g-home-end left down up rght @back @fwd _
+  _    _    del  caps _    @word-left _    @wheel-down @wheel-up _    _    _
+  _    _    _              _              _    _    _
+)
