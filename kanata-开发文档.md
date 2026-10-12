@@ -1017,24 +1017,114 @@ Nav Layer
 
 ***
 
-# 29. 后续扩展
+# 29. 版本演进路线图
 
-第一版完成以后，再考虑：
+当前项目处于 V1，后续按以下优先级演进。每个版本独立交付，完成并稳定后再进入下一个版本。
 
 ```text
-V2
-├── 更好的滚轮体验
-├── 调整 Caps tap/hold 时间
-├── 更多文本导航
-├── 更多编辑操作
-└── 其他专用 layer
+V1 (当前)
+  └─ CapsLock tap/hold + Nav Layer
+      │
+      ├─ V2: NavLock —— 导航层锁定 (最优先，体验提升最明显)
+      │
+      └─ V3: Symbols Layer —— 编程符号层
 ```
 
-但这些都不属于第一阶段。
+## 29.1 V1 — 当前目标
 
-第一阶段唯一目标：
+**唯一目标：把当前 Nav Layer 稳定实现。**
 
-> **把当前 Nav Layer 稳定实现。**
+具体内容见本规格所有前文章节。验收标准见第 31 节。
+
+## 29.2 V2 — NavLock (导航层锁定)
+
+### 问题
+
+当前 Nav Layer 必须 **全程按住 CapsLock** 才能保持激活。短时间导航还行，但连续做"移动 → 滚动 → 再移动"的组合动作时，小拇指长时间按压会累。
+
+### 方案
+
+增加一个 **NavLock** 机制：在 Nav Layer 中，按特定键进入"持久导航模式"，松开 CapsLock 后 Nav Layer 仍然保持激活，直到主动解锁。
+
+### 触发/解锁方式
+
+- 进入 NavLock：按住 CapsLock 的同时，按某个键（候选：`R` 或 `Z`）
+- 退出 NavLock：再按一次该键，或按 Esc
+
+### 为什么不直接用 layer-toggle
+
+Kanata 提供原生的 `layer-toggle`，但 toggle 会覆盖 base layer 的行为。NavLock 应该保持 Nav Layer 的所有映射持续生效，同时允许 CapsLock 回到 tap/hold 正常状态（CapsLock tap 仍然是 Esc）。
+
+### 需要验证的 Kanata 特性
+
+- `layer-while-held` + `layer-toggle` 的组合使用
+- layer 切换与 `tap-hold` 的交互是否符合预期
+- NavLock 激活后，普通打字（Base Layer 行为）是否被正确屏蔽
+
+### 验收标准
+
+- [ ] NavLock 激活后，松开 CapsLock，Nav Layer 仍然生效
+- [ ] NavLock 激活后，CapsLock tap 仍然输出 Esc
+- [ ] NavLock 可以再次按键或按 Esc 退出
+- [ ] NavLock 状态不会与 Nav Layer 激活状态混乱
+- [ ] 所有 V1 功能在 NavLock 模式下仍然正常工作
+
+## 29.3 V3 — Symbols Layer (编程符号层)
+
+### 问题
+
+编写代码时，高频符号 `( ) [ ] { } = + - * / , . ; :` 都集中在键盘顶排或需要 Shift，每次按都要抬手或按两个键。
+
+### 方案
+
+利用右 Alt（`ralt`）作为 tap-hold：按住右 Alt 激活 Symbols Layer，短按右 Alt 保持原始行为（在 Windows 上通常是 AltGr）。
+
+### 设计参考
+
+参考 Arsenik / Ergo-L / Lafayette 的符号层设计原则：
+
+- **高频符号放在最容易按的位置**：主行右手区域
+- **避免 same-finger bigram**：连续高频符号不应该用同一根手指
+- **对称分布**：左右手都能覆盖常用符号组合（如 `()` 用左半、`[]` 用右半）
+
+### 键位草案
+
+符号层详细键位在 V3 规划阶段设计，这里只定义原则：
+
+```text
+右 Alt 按住 → Symbols Layer
+  ├── 右手主行: 括号、方括号、花括号
+  ├── 右手上行: 运算符 = + - * /
+  ├── 右手下行: , . ; :
+  └── 左手主行: 空或辅助映射
+```
+
+### 为什么用右 Alt
+
+- 右 Alt 在大多数 Windows 布局上是 AltGr（tap 时有功能），但按住 AltGr 的场景远少于左 Alt 按住
+- 右 Alt 作为 layer 切换键，左手不需要额外动作，双手自然配合
+- 不影响左 Alt 的现有功能（Alt+Tab、Alt+Click 等）
+
+### 需要验证的 Kanata 特性
+
+- `ralt` 是否已经被 Kanata `defsrc` 覆盖
+- AltGr 行为在 `tap-hold` 下是否被正确处理
+- Symbols Layer 下是否仍然需要 Home Row 的原有字母透传（`transparent`）
+
+### 验收标准
+
+- [ ] 按住右 Alt 时，符号层生效
+- [ ] 短按右 Alt 时，输出原始 AltGr 行为
+- [ ] 符号组合（如 `()`, `[]`, `{}`）可以流畅输入
+- [ ] V1 Nav Layer 功能不受影响
+- [ ] V2 NavLock 与 Symbols Layer 可以共存或互斥（根据设计决定）
+
+## 29.4 版本隔离原则
+
+- **每个版本独立发布**，完成一个再开始下一个
+- **不跳过版本**，不并行开发 V2+V3
+- **每个版本都要重新跑一遍第 31 节的验收矩阵**，确保新增功能没有破坏已有功能
+- 每个版本的实现细节在开始该版本时，补充本规格文档对应的章节
 
 ***
 
