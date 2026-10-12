@@ -4,7 +4,27 @@
 
 只靠 **两个键**（CapsLock + 右 Alt），让你在 **不改变打字习惯** 的前提下，把导航和编程符号从"抬手去顶排"变成"主行就能按到"。
 
-![layers](https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=keyboard%20layer%20diagram%20showing%20three%20layers%3A%20base%20layer%20with%20normal%20keys%2C%20nav%20layer%20with%20Vim%20HJKL%20navigation%20activated%20by%20holding%20CapsLock%2C%20symbols%20layer%20with%20programming%20symbols%20on%20left%20hand%20activated%20by%20holding%20right%20Alt%2C%20clean%20minimal%20diagram%2C%20light%20background%2C%20orange%20accent%20color&image_size=landscape_16_9)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Base Layer · 正常打字                                         │
+│  除 CapsLock 和右 Alt 外，所有键保持原始行为                   │
+│                                                                 │
+│  ┌── CapsLock ──┐              ┌── 右 Alt ──┐                  │
+│  │ tap → Esc     │              │ tap → AltGr │                 │
+│  │ hold ──────┐  │              │ hold ──────┐ │                │
+│  └─────────────┼──┘              └─────────────┼─┘               │
+│                │                                │                │
+│  ┌─────────────▼──────────┐    ┌───────────────▼──────────┐    │
+│  │  Nav Layer (Caps hold) │    │  Sym Layer (右 Alt hold)  │    │
+│  │  HJKL 方向移动         │    │  左手 9 个编程符号        │    │
+│  │  Y/O 行首尾            │    │  e=(  r=)  t=/           │    │
+│  │  U/I 翻页              │    │  d=[  f=]  g=\           │    │
+│  │  W/B 单词移动          │    │  c={  v=}               │    │
+│  │  ;/' 浏览器后退前进    │    │                           │    │
+│  │  R 进入 NavLock        │    └───────────────────────────┘    │
+│  └────────────────────────┘                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 > [!NOTE]
 > **Kanata v1.12.0** · **Windows** · 无需刷固件，无需改键盘布局，开箱即用。
