@@ -67,7 +67,7 @@ Coding Agent 不应该只是“生成一份看起来合理的 `.kbd` 文件”�
  ↓
 编写 .kbd
  ↓
-运行 Kanata --check
+运行 Kanata --check (.\kanata_windows_gui_winIOv2_cmd_allowed_x64.exe --check)
  ↓
 修复语法/配置错误
  ↓
@@ -670,7 +670,7 @@ Agent 应根据实际使用的 Kanata Windows 可执行文件确定启动参数�
 每次修改 `.kbd` 后，必须优先执行 Kanata 的配置检查：
 
 ```text
-kanata.exe --check --cfg <config.kbd>
+.\kanata_windows_gui_winIOv2_cmd_allowed_x64.exe --check --cfg <config.kbd>
 ```
 
 Kanata 1.12.0 官方文档明确提供 `--check`，用于只检查配置而不正常运行。
@@ -1109,55 +1109,98 @@ navlock-out (layer-switch base)       ;; 在 navlock 层按 R：切回 base
 - QWERTY 布局中 R 在左手食指位置，按住 CapsLock（小拇指）时左手食指够得到
 - `navlock` 层里 R 的意义从 "按字母 R" 变成 "退出 NavLock"，语义清晰
 
-## 29.3 V3 — Symbols Layer (编程符号层)
+## 29.3 V3 — Symbols Layer (编程符号层) ✅ 已实现
+
+**实现日期：** 2026-10-13
 
 ### 问题
 
-编写代码时，高频符号 `( ) [ ] { } = + - * / , . ; :` 都集中在键盘顶排或需要 Shift，每次按都要抬手或按两个键。
+编写代码时，高频符号 `( ) [ ] { } / \` 都集中在键盘顶排或需要 Shift，每次按都要抬手或按两个键。
 
-### 方案
+### 触发方式
 
-利用右 Alt（`ralt`）作为 tap-hold：按住右 Alt 激活 Symbols Layer，短按右 Alt 保持原始行为（在 Windows 上通常是 AltGr）。
+- **按住右 Alt** → 激活 Symbols Layer（`layer-toggle symbols`）
+- **松开右 Alt** → Symbols Layer 自动退出
+- **短按右 Alt** → 保持原 AltGr 行为
 
-### 设计参考
+### 最终键位设计 (左手)
 
-参考 Arsenik / Ergo-L / Lafayette 的符号层设计原则：
+**设计逻辑：右手按 Alt 做修饰，左手腾出来按符号 —— 和 Shift/修饰键双手配合一致（右手 Shift + 左手大写字母 / 左手 Ctrl + 右手快捷键）**
 
-- **高频符号放在最容易按的位置**：主行右手区域
-- **避免 same-finger bigram**：连续高频符号不应该用同一根手指
-- **对称分布**：左右手都能覆盖常用符号组合（如 `()` 用左半、`[]` 用右半）
+```
+右 Alt 按住时的左手映射:
 
-### 键位草案
+                e=(   r=)   t=/
 
-符号层详细键位在 V3 规划阶段设计，这里只定义原则：
+           d=[    f=]    g=\
 
-```text
-右 Alt 按住 → Symbols Layer
-  ├── 右手主行: 括号、方括号、花括号
-  ├── 右手上行: 运算符 = + - * /
-  ├── 右手下行: , . ; :
-  └── 左手主行: 空或辅助映射
+                c={   v=}
 ```
 
-### 为什么用右 Alt
+**手指模式（好记的关键）：**
+- **中指列** (e, d, c) → **左括号** `( [ {` ← 一列都是开括号
+- **食指列** (r, f, v) → **右括号** `) ] }` ← 一列都是闭括号
+- **食指扩展** (t, g) → **斜杠** `/ \`
 
-- 右 Alt 在大多数 Windows 布局上是 AltGr（tap 时有功能），但按住 AltGr 的场景远少于左 Alt 按住
-- 右 Alt 作为 layer 切换键，左手不需要额外动作，双手自然配合
-- 不影响左 Alt 的现有功能（Alt+Tab、Alt+Click 等）
+**最终只保留 9 个符号** —— `=` 去掉，因为顶排默认 `=` 打法更习惯。
 
-### 需要验证的 Kanata 特性
+### 实现方案
 
-- `ralt` 是否已经被 Kanata `defsrc` 覆盖
-- AltGr 行为在 `tap-hold` 下是否被正确处理
-- Symbols Layer 下是否仍然需要 Home Row 的原有字母透传（`transparent`）
+```scheme
+;; 右 Alt tap/hold: tap→ralt, hold→Symbols Layer
+symalt (tap-hold $tap-timeout $hold-timeout ralt (layer-toggle symbols))
+```
 
-### 验收标准
+base 层和 navlock 层的 ralt 位置改为 `@symalt`。nav 层 ralt 透明（Nav 临时激活时可以用右手切换符号层）。
 
-- [ ] 按住右 Alt 时，符号层生效
-- [ ] 短按右 Alt 时，输出原始 AltGr 行为
-- [ ] 符号组合（如 `()`, `[]`, `{}`）可以流畅输入
-- [ ] V1 Nav Layer 功能不受影响
-- [ ] V2 NavLock 与 Symbols Layer 可以共存或互斥（根据设计决定）
+symbols 层左手全部重新映射，右手全部透明（保留打字能力）。
+
+### 重要发现：Kanata S-expression 中的特殊字符
+
+**Kanata 配置是 S-expression（Lisp 语法）**，以下字符不能直接写在 deflayer 里：
+
+| 不能直接写 | 正确 chord 格式 | 含义 |
+|:--|:--|:--|
+| `(` | `S-9` | Shift+9 |
+| `)` | `S-0` | Shift+0 |
+| `{` | `S-[` | Shift+[ |
+| `}` | `S-]` | Shift+] |
+| `+` | `S-=` | Shift+= |
+| `*` | `S-8` | Shift+8 |
+| `~` | `S-grv` | Shift+反引号 |
+| `!` | `S-1` | Shift+1 |
+| `:` | `S-;` | Shift+; |
+| `?` | `S-/` | Shift+/ |
+| `|` | `S-\` | Shift+\ |
+| `#` | `S-3` | Shift+3 |
+
+以下字符是合法 key name，可以直接写：`[ ] - = \ , . ;`
+
+参考 Kanata issue #459：https://github.com/jtroo/kanata/issues/459
+
+### 为什么用左手而不是右手
+
+初始设计想把符号放在右手（因为符号高频），后来发现：
+
+1. **双手配合更自然**：右手按 Alt 做修饰，左手按符号 —— 和 Shift/Ctrl 的使用模式完全一致
+2. **右手不闲着**：右 Alt 按住时右手可以同时打字（例如 `右Alt+e → 左a → 右Alt+r` 输出 `(a)`）
+3. 如果你习惯单手忙，右 Alt 按住右手按符号也不是不行，但修饰键双手配合是更底层的人体工程学直觉
+
+### 验收标准（全部通过）
+
+- [x] 按住右 Alt 时，符号层生效
+- [x] 短按右 Alt 时，输出原始 AltGr 行为
+- [x] 9 个符号全部正确输出
+- [x] 左手打字母 + 右手按 Alt 的组合流畅
+- [x] V1 Nav Layer 功能不受影响
+- [x] V2 NavLock 功能不受影响
+- [x] `kanata --check` 通过
+
+### 本次迭代踩过的坑
+
+1. **Chord 格式问题**：一开始直接写 `( ) { }` 报 Kanata 解析错误，必须用 S-xxx chord 格式
+2. **乱码行**：手动编辑时曾在 alias 区末尾遗留了 `)|||||#{}+-` 脏数据，导致后面 deflayer 结构异常。最终靠严格的 `--check` + 逐行读文件发现
+3. **对齐问题**：deflayer 每行的位置必须严格对应 defsrc，用 `_` 透明键占位不能省。建议每行注释 anchor（`;; row1: tab q w e r t ...`）方便自查
 
 ## 29.4 版本隔离原则
 

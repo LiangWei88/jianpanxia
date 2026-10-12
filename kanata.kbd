@@ -2,6 +2,7 @@
 Kanata Vim 风格全局导航键盘系统
 ---------------------------------
 CapsLock: tap → Esc, hold → Nav Layer
+右 Alt:   tap → ralt (AltGr), hold → Symbols Layer (左手编程符号)
 开发文档: kanata-开发文档.md
 Kanata 版本: 1.12.0
 后端: Windows winIOv2
@@ -70,6 +71,10 @@ Kanata 版本: 1.12.0
   ;; 在 NavLock 状态下按 R 切回 base
   navlock-in  (layer-switch navlock)
   navlock-out (layer-switch base)
+
+  ;; --- V3 Symbols Layer ---
+  ;; 右 Alt tap/hold: tap→ralt (AltGr 原行为), hold→Symbols Layer
+  symalt (tap-hold $tap-timeout $hold-timeout ralt (layer-toggle symbols))
 )
 
 ;; ==================== deflayer base ====================
@@ -79,7 +84,7 @@ Kanata 版本: 1.12.0
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   @capnav a    s    d    f    g    h    j    k    l    ;    '    ret
   lsft z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lmet lalt           spc            ralt rmet rctl
+  lctl lmet lalt           spc            @symalt rmet rctl
 )
 
 ;; ==================== deflayer nav ====================
@@ -105,5 +110,39 @@ Kanata 版本: 1.12.0
   _    _    @word-right _    @navlock-out _    home pgup pgdn end  _    _    _    _
   @capnav _    _    _    _    @g-home-end left down up rght @back @fwd _
   _    _    del  caps _    @word-left _    @wheel-down @wheel-up _    _    _
+  _    _    _              _              @symalt _    _
+)
+
+;; ==================== deflayer symbols ====================
+;; V3 Symbols Layer: 右 Alt 按住时激活
+;; 左手映射高频编程符号，右手全部透明
+;;
+;; 设计逻辑: 右手按 Alt 做修饰，左手腾出来按符号 —— 和 Shift/修饰键双手配合一致
+;;
+;; 键位设计 (ANSI QWERTY 左手):
+;;   左手中指 (e, d, c) → 左括号 ( [ {
+;;   左手食指 (r, f, v) → 右括号 ) ] }
+;;   左手食指扩展 (t, g, b) → 运算符 / \ =
+;;
+;;   row 2 (上行):     e=(    r=)    t=/
+;;   row 3 (home row): d=[    f=]    g=\
+;;   row 4 (下行):     c={    v=}    b==
+;;
+;; chord 格式: S-9=Shift+9 即 (   S-0=Shift+0 即 )
+;;             S-[=Shift+[ 即 {   S-]=Shift+] 即 }
+;;             (){} 是 S-expression 特殊字符，必须用 chord 格式
+;;
+;; 退出方式: 松开右 Alt (layer-toggle 自动关闭)
+(deflayer symbols
+  ;; defsrc anchor:
+  ;; row0: grv 1 2 3 4 5 6 7 8 9 0 - = bspc
+  ;; row1: tab q w e r t y u i o p [ ] \
+  ;; row2: caps a s d f g h j k l ; ' ret
+  ;; row3: lsft z x c v b n m , . / rsft
+  ;; row4: lctl lmet lalt spc ralt rmet rctl
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    S-9  S-0  /    _    _    _    _    _    _    _    _
+  _    _    _    [    ]    \    _    _    _    _    _    _    _
+  _    _    _    S-[  S-]  _    _    _    _    _    _    _
   _    _    _              _              _    _    _
 )
