@@ -64,6 +64,12 @@ Kanata 版本: 1.12.0
   ;; 参数: initial-velocity max-velocity acceleration deceleration
   wheel-up   (mwheel-accel-up   3 1200 1.15 0.93)
   wheel-down (mwheel-accel-down 3 1200 1.15 0.93)
+
+  ;; --- V2 NavLock ---
+  ;; R 键 toggle 导航层锁定：在 Nav 活跃时按 R 进入 NavLock，
+  ;; 在 NavLock 状态下按 R 切回 base
+  navlock-in  (layer-switch navlock)
+  navlock-out (layer-switch base)
 )
 
 ;; ==================== deflayer base ====================
@@ -81,8 +87,23 @@ Kanata 版本: 1.12.0
 ;; 所有未定义的键透明传递（保持 base layer 行为）
 (deflayer nav
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    _    @word-right _    _    _    home pgup pgdn end  _    _    _    _
+  _    _    @word-right _    @navlock-in _    home pgup pgdn end  _    _    _    _
   _    _    _    _    _    @g-home-end left down up rght @back @fwd _
+  _    _    del  caps _    @word-left _    @wheel-down @wheel-up _    _    _
+  _    _    _              _              _    _    _
+)
+
+;; ==================== deflayer navlock ====================
+;; NavLock 层：Nav Layer 的永久锁定版
+;; 与 nav 层映射完全相同，但：
+;;   - CapsLock 恢复 tap-hold 行为（tap→Esc, hold→nav layer）
+;;   - R 键切换回 base（退出 NavLock）
+;; 进入方式：CapsLock hold → nav 层 → 按 R
+;; 退出方式：在 navlock 层按 R
+(deflayer navlock
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    @word-right _    @navlock-out _    home pgup pgdn end  _    _    _    _
+  @capnav _    _    _    _    @g-home-end left down up rght @back @fwd _
   _    _    del  caps _    @word-left _    @wheel-down @wheel-up _    _    _
   _    _    _              _              _    _    _
 )

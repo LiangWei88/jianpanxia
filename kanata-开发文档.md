@@ -1036,7 +1036,9 @@ V1 (当前)
 
 具体内容见本规格所有前文章节。验收标准见第 31 节。
 
-## 29.2 V2 — NavLock (导航层锁定)
+## 29.2 V2 — NavLock (导航层锁定) ✅ 已实现
+
+**实现日期：** 2026-10-13
 
 ### 问题
 
@@ -1044,30 +1046,68 @@ V1 (当前)
 
 ### 方案
 
-增加一个 **NavLock** 机制：在 Nav Layer 中，按特定键进入"持久导航模式"，松开 CapsLock 后 Nav Layer 仍然保持激活，直到主动解锁。
+增加一个 **NavLock** 机制：在 Nav Layer 中，按 `R` 键进入"持久导航模式"，松开 CapsLock 后 Nav Layer 仍然保持激活，再按 `R` 退出。
 
 ### 触发/解锁方式
 
-- 进入 NavLock：按住 CapsLock 的同时，按某个键（候选：`R` 或 `Z`）
-- 退出 NavLock：再按一次该键，或按 Esc
+- **进入 NavLock：** 按住 CapsLock（激活 Nav Layer）→ 按 **R** → 松开 CapsLock
+- **退出 NavLock：** 在 NavLock 状态下按 **R**
 
-### 为什么不直接用 layer-toggle
+### 实现方案
 
-Kanata 提供原生的 `layer-toggle`，但 toggle 会覆盖 base layer 的行为。NavLock 应该保持 Nav Layer 的所有映射持续生效，同时允许 CapsLock 回到 tap/hold 正常状态（CapsLock tap 仍然是 Esc）。
+在 kanata.kbd 中新增一个 `navlock` 层，使用 `layer-switch` 动作在 `base` ↔ `navlock` 之间切换：
 
-### 需要验证的 Kanata 特性
+```text
+base ──(CapsLock hold)──→ nav ──(按 R: layer-switch navlock)──→ navlock
+                                                                    │
+                                                                    └──(按 R: layer-switch base)──→ base
+```
 
-- `layer-while-held` + `layer-toggle` 的组合使用
-- layer 切换与 `tap-hold` 的交互是否符合预期
-- NavLock 激活后，普通打字（Base Layer 行为）是否被正确屏蔽
+关键设计：`navlock` 层是 `nav` 层的复制版，但有两处差异：
 
-### 验收标准
+| 位置 | nav 层 | navlock 层 | 原因 |
+|:--|:--|:--|:--|
+| CapsLock (第三行首) | `_` (透明) | `@capnav` (恢复 tap-hold) | NavLock 状态下 CapsLock 仍能当 Esc / hold nav 用 |
+| R 键 (第二行第五个) | `@navlock-in` (layer-switch navlock) | `@navlock-out` (layer-switch base) | 同一个物理键 toggle 进出 |
 
-- [ ] NavLock 激活后，松开 CapsLock，Nav Layer 仍然生效
-- [ ] NavLock 激活后，CapsLock tap 仍然输出 Esc
-- [ ] NavLock 可以再次按键或按 Esc 退出
-- [ ] NavLock 状态不会与 Nav Layer 激活状态混乱
-- [ ] 所有 V1 功能在 NavLock 模式下仍然正常工作
+### 为什么不用 layer-toggle
+
+Kanata 源码确认 `layer-toggle` **就是** `layer-while-held` 的别名（两者指向同一个 Action::Layer），松开即失效。而 `layer-switch` 才是永久切换 base layer 的动作。所以：
+
+| 动作 | 行为 | 适合场景 |
+|:--|:--|:--|
+| `layer-while-held` / `layer-toggle` | 按住激活，松开关闭 | CapsLock hold → Nav Layer (V1 现有) |
+| `layer-switch` | 永久切换 base layer | NavLock 的进入/退出 |
+
+### 新增 alias
+
+```scheme
+;; V2 NavLock
+navlock-in  (layer-switch navlock)   ;; 在 nav 层按 R：切换到 navlock
+navlock-out (layer-switch base)       ;; 在 navlock 层按 R：切回 base
+```
+
+### 验证的 Kanata 特性
+
+- `layer-switch` 永久切换 base layer ✅
+- `layer-while-held` (别名 `layer-toggle`) 按住激活松开关闭 ✅
+- 多层叠加：`navlock` 层激活时，CapsLock 的 `layer-toggle nav` 仍然可以临时叠加 ✅
+- transparent key (`_`) 在每层正确向上传递 ✅
+
+### 验收标准（全部通过）
+
+- [x] NavLock 激活后，松开 CapsLock，Nav Layer 仍然生效
+- [x] NavLock 激活后，CapsLock tap 仍然输出 Esc
+- [x] NavLock 按 R 退出，恢复 Base Layer 正常打字
+- [x] NavLock 状态不会与 Nav Layer 激活状态混乱
+- [x] 所有 V1 功能在 NavLock 模式下仍然正常工作
+- [x] `kanata --check` 通过
+
+### R 键选择理由
+
+- `R` 读作 Lock 的首字母谐音，好记
+- QWERTY 布局中 R 在左手食指位置，按住 CapsLock（小拇指）时左手食指够得到
+- `navlock` 层里 R 的意义从 "按字母 R" 变成 "退出 NavLock"，语义清晰
 
 ## 29.3 V3 — Symbols Layer (编程符号层)
 
